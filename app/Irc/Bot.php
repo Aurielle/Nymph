@@ -111,14 +111,8 @@ class Bot extends Nette\Object
 
 	public function run()
 	{
-		$stdin = fopen('php://stdin', 'r');
-		$read = array($stdin);
-		$write = array();
-		$except = array();
-		stream_select($read, $write, $except, 0);
-
 		while (TRUE) {
-			$input = fread($stdin, 128);
+			$input = '';
 			$data = fgets($this->socket, 256);
 			$ex = explode(' ', $data);
 			echo "Received: $data\n";
@@ -133,7 +127,7 @@ class Bot extends Nette\Object
 				$this->sendData("NOTICE " . preg_replace('#\:(.+)\!.+#', '$1', $ex[0]) . " :\001VERSION Nymph : v1.0dev : NetteFw");
 			}
 
-			if ($input) {
+			if ($this->non_block_read(STDIN, $input)) {
 				dump($input);
 			}
 		}
