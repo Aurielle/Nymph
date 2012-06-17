@@ -18,22 +18,31 @@ use Nymph, Nette;
 /**
  * NymphExtension
  */
-class NymphExtension extends Nette\Config\CompilerExtension
+class NymphExtension extends CompilerExtension
 {
-	/** @var array */
-	public $defaults = array(
-		'commands' => array(),
-	);
-
-
 	public function loadConfiguration()
 	{
 		$container = $this->getContainerBuilder();
-		$config = $this->getConfig($this->defaults);
+		$container->addDefinition('eventManager')
+			->setClass('Nymph\Events\EventManager');
+	}
 
-		$bot = $container->getDefinition('irc.bot');
-		foreach ($config['commands'] as $cmd) {
-			$app->addSetup('addCommand', $cmd);
+
+	public function beforeCompile()
+	{
+		$this->registerEventSubscribers($this->getContainerBuilder());
+	}
+
+
+
+	/**
+	 * @param \Nette\DI\ContainerBuilder $container
+	 */
+	protected function registerEventSubscribers(ContainerBuilder $container)
+	{
+		foreach ($container->findByTag('eventSubscriber') as $listener => $meta) {
+			$container->getDefinition('eventManager')
+				->addSetup('addEventSubscriber', array('@' . $listener));
 		}
 	}
 }

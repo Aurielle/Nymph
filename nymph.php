@@ -45,10 +45,10 @@ $configurator->createRobotLoader()
 // Config.neon
 $configurator->addConfig(__DIR__ . '/app/config.neon');
 $configurator->onCompile[] = function($configurator, $compiler) {
-	$compiler->addExtension('irc', new Nymph\Config\IrcExtension);
 	$compiler->addExtension('nymph', new Nymph\Config\NymphExtension);
+	$compiler->addExtension('irc', new Nymph\Config\IrcExtension);
 };
 $container = $configurator->createContainer();
 
 // Run it
-$container->irc->bot->run();
+$container->bot->run();

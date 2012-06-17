@@ -20,6 +20,9 @@ use Nymph, Nette;
  */
 class Bot extends Nette\Object
 {
+	/** @var Nymph\Events\EventManager */
+	protected $eventManager;
+
 	/** @var array */
 	protected $params;
 
@@ -27,30 +30,16 @@ class Bot extends Nette\Object
 	protected $socket;
 
 
-	/** @var array */
-	public $onConnect;
 
-	/** @var array */
-	public $onDisconnect;
-
-	/** @var array */
-	public $onLogin;
-
-	/** @var array */
-	public $onCommandReceived;
-
-	/** @var array */
-	public $onCommandSent;
-
-
-
-	public function __construct(array $params)
+	public function __construct(Nymph\Events\EventManager $evm, array $params)
 	{
+		$this->eventManager = $evm;
 		$this->params = $params;
 		$this->socket = fsockopen($this->params['server'], $this->params['port']);
 		stream_set_blocking($this->socket, FALSE);
-		$this->onConnect($this);
+		//$this->onConnect($this);
 
+		// check for exist
 		$this->login($this->params['ident'], $this->params['user'], $this->params['nick'], $this->params['password']);
 		$this->joinChannels($this->params['channels']);
 	}
@@ -65,7 +54,8 @@ class Bot extends Nette\Object
 	public function sendData($data)
 	{
 		fputs($this->socket, $data . "\r\n");
-		echo "-> $data\n"; // to do - log
+		echo "--> $data\n"; // to do - log
+		// todo detekce QUIT
 	}
 
 
@@ -76,7 +66,7 @@ class Bot extends Nette\Object
 	    $result = stream_select($read, $write, $except, 0);
 	    if($result === false) throw new \Exception('stream_select failed');
 	    if($result === 0) return false;
-	    $data = fread($fd, 256);
+	    $data = fread($fd, 512);
 	    return true;
 	}
 
@@ -88,7 +78,7 @@ class Bot extends Nette\Object
 		$this->sendData("NICK $nick");
 
 		if ($password) {
-			$this->sendData("MSG NickServ identify $password");
+			$this->sendData("PRIVMSG NickServ identify $password");
 		}
 	}
 
@@ -104,7 +94,7 @@ class Bot extends Nette\Object
 
 	public function quit($reason = 'Leaving')
 	{
-		$this->onDisconnect($this, $reason);
+		//$this->onDisconnect($this, $reason);
 		$this->sendData("QUIT $reason");
 		exit;
 	}
@@ -112,25 +102,27 @@ class Bot extends Nette\Object
 
 	public function run()
 	{
-		while (TRUE) {
-			$input = '';
-			$data = fgets($this->socket, 256);
+		$loop = new Nymph\Tools\EndlessLoopIterator;
+		$input = '';
+		foreach ($loop as $iteration) {
+			$data = fgets($this->socket, 512);
 			$ex = explode(' ', $data);
-			if ($data) echo "<- $data\n";
+			if ($data) echo "<-- $data\n";
 
 			if ($ex[0] == 'PING') {
 				$this->sendData("PONG $ex[1]");
 			}
 
 			if (strpos($data, "\x01VERSION") !== FALSE) {
-				dump($ex);
-				dump(trim($ex[3]));
-				$this->sendData("NOTICE " . preg_replace('#\:(.+)\!.+#', '$1', $ex[0]) . " :\x01VERSION Aurielle\\Nymph v1.0-dev\x01");
+				$this->sendData("NOTICE " . preg_replace('#\:(.+)\!.+#', '$1', $ex[0]) . " :\x01VERSION Aurielle/Nymph v1.0-dev\x01");
 			}
 
 			if ($this->non_block_read(STDIN, $input)) {
 				$this->sendData($input);
 			}
+
+			// reduce CPU usage, 2 iterations per second are more than enough
+			usleep(500);
 		}
 	}
 }

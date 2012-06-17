@@ -18,7 +18,7 @@ use Nymph, Nette;
 /**
  * IrcExtension
  */
-class IrcExtension extends Nette\Config\CompilerExtension
+class IrcExtension extends CompilerExtension
 {
 	/** @var array */
 	public $defaults = array(
@@ -31,17 +31,59 @@ class IrcExtension extends Nette\Config\CompilerExtension
 		),
 	);
 
+	/** @var array */
+	public $networkDefaults = array(
+		'server' => NULL,
+		'port' => 6667,
+		'nick' => 'NymphBot',
+		'password' => NULL,
+		'alternativeNicks' = array(),
+		'ident' => NULL,
+		'user' => NULL,
+		'channels' => array(),
+	);
+
+	/** @var array */
+	private $networks = array();
+
 
 	public function loadConfiguration()
 	{
 		$container = $this->getContainerBuilder();
 		$config = $this->getConfig($this->defaults);
 
-		if (!$config['default']) {
-			throw new Nette\InvalidStateException('Default network not selected.');
+		if (empty($config['networks'])) {
+			throw new Nette\InvalidStateException('You have to define at least one IRC server.');
 		}
 
-		$bot = $container->addDefinition($this->prefix('bot'))
-				->setClass('Nymph\Irc\Bot', array($config['networks'][$config['default']]));
+		foreach ($config['networks'] as $name => $network) {
+			$options = self::getOptions($network, $this->networkDefaults);
+
+			if (empty($options['server'])) {
+				throw new Nette\InvalidStateException("Network '$name' has no server specified.");
+			}
+
+			if (empty($options['alternativeNicks'])) {
+				$options['alternativeNicks'] = $config['alternativeNicks'];
+			}
+
+			if (empty($options['ident'])) {
+				$options['ident'] = Nymph\Nymph::NAME;
+			}
+
+			if (empty($options['user'])) {
+				$options['user'] = Nymph\Nymph::NAME . ' ' . Nymph\Nymph::VERSION;
+			}
+
+			$this->networks[$name] = $options;
+		}
+
+		// Select first network if no selected
+		if (!$config['default']) {
+			$config['default'] = reset(array_keys($config['networks']));
+		}
+
+		$bot = $container->addDefinition('bot')
+				->setClass('Nymph\Irc\Bot', array('@eventManager', $this->networks[$config['default']]));
 	}
 }
