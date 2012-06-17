@@ -1,0 +1,22 @@
+{
+    "hash": "2a6203c3d58cef08da959346f59655a9",
+    "packages": [
+        {
+            "package": "kdyby/curl-extension",
+            "version": "dev-master",
+            "source-reference": "0de5b906e3821d326ef80a3be86e3f57edc45ad2"
+        },
+        {
+            "package": "nette/nette",
+            "version": "v2.0.3"
+        }
+    ],
+    "packages-dev": null,
+    "aliases": [
+
+    ],
+    "minimum-stability": "dev",
+    "stability-flags": {
+        "kdyby/curl-extension": 20
+    }
+}
