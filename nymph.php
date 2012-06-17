@@ -13,25 +13,24 @@ if (PHP_SAPI !== 'cli') {
 	die('<h1>Please run Nymph from the command line.</h1>');
 }
 
+declare(ticks=1);
+define('NYMPH_ROOT', __DIR__);
 require_once __DIR__ . '/vendor/autoload.php';
 require_once __DIR__ . '/vendor/nette/nette/Nette/loader.php';
 
-define('NYMPH_ROOT', __DIR__);
-declare(ticks = 1);
+// Causes shutdown handler to be called normally when the script is exitted via ctrl+c
+// works only on linux and PHP compiled with --enable-pcntl
+function sigint() {
+	exit;
+}
+
+if (function_exists('pcntl_signal')) {
+	pcntl_signal(SIGINT, 'sigint');
+	pcntl_signal(SIGTERM, 'sigint');
+}
 
 // Configuration
 $configurator = new Nette\Config\Configurator();
-
-// Causes shutdown handler to be called normally when the script is exitted via ctrl+c
-// works only on linux and PHP compiled with --enable-pcntl
-if (function_exists('pcntl_signal')) {
-	$terminate = function() {
-		exit();
-	};
-
-	pcntl_signal(SIGINT, $terminate);
-	pcntl_signal(SIGTERM, $terminate);
-}
 
 // Error visualization & logging
 $configurator->setDebugMode(TRUE);

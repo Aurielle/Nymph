@@ -48,6 +48,7 @@ class Bot extends Nette\Object
 	{
 		$this->params = $params;
 		$this->socket = fsockopen($this->params['server'], $this->params['port']);
+		stream_set_blocking($this->socket, FALSE);
 		$this->onConnect($this);
 
 		$this->login($this->params['ident'], $this->params['user'], $this->params['nick'], $this->params['password']);
@@ -64,7 +65,7 @@ class Bot extends Nette\Object
 	public function sendData($data)
 	{
 		fputs($this->socket, $data . "\r\n");
-		echo "Sending data: $data\n"; // to do - log
+		echo "-> $data\n"; // to do - log
 	}
 
 
@@ -75,7 +76,7 @@ class Bot extends Nette\Object
 	    $result = stream_select($read, $write, $except, 0);
 	    if($result === false) throw new \Exception('stream_select failed');
 	    if($result === 0) return false;
-	    $data = stream_get_line($fd, 1);
+	    $data = fread($fd, 256);
 	    return true;
 	}
 
@@ -105,7 +106,7 @@ class Bot extends Nette\Object
 	{
 		$this->onDisconnect($this, $reason);
 		$this->sendData("QUIT $reason");
-		exit();
+		exit;
 	}
 
 
@@ -115,20 +116,20 @@ class Bot extends Nette\Object
 			$input = '';
 			$data = fgets($this->socket, 256);
 			$ex = explode(' ', $data);
-			echo "Received: $data\n";
+			if ($data) echo "<- $data\n";
 
 			if ($ex[0] == 'PING') {
 				$this->sendData("PONG $ex[1]");
 			}
 
-			if (strpos($data, 'VERSION') !== FALSE) {
+			if (strpos($data, "\x01VERSION") !== FALSE) {
 				dump($ex);
 				dump(trim($ex[3]));
-				$this->sendData("NOTICE " . preg_replace('#\:(.+)\!.+#', '$1', $ex[0]) . " :\001VERSION Nymph : v1.0dev : NetteFw");
+				$this->sendData("NOTICE " . preg_replace('#\:(.+)\!.+#', '$1', $ex[0]) . " :\x01VERSION Aurielle\\Nymph v1.0-dev\x01");
 			}
 
 			if ($this->non_block_read(STDIN, $input)) {
-				dump($input);
+				$this->sendData($input);
 			}
 		}
 	}
