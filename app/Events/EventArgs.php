@@ -30,7 +30,7 @@ use Nymph, Nette;
  * @author  Jonathan Wage <jonwage@gmail.com>
  * @author  Roman Borschel <roman@code-factory.org>
  */
-class EventArgs
+class EventArgs extends Nette\Object
 {
     /**
      * @var EventArgs Single instance of EventArgs
