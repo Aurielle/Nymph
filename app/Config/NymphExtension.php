@@ -38,7 +38,7 @@ class NymphExtension extends CompilerExtension
 	/**
 	 * @param \Nette\DI\ContainerBuilder $container
 	 */
-	protected function registerEventSubscribers(ContainerBuilder $container)
+	protected function registerEventSubscribers(Nette\DI\ContainerBuilder $container)
 	{
 		foreach ($container->findByTag('eventSubscriber') as $listener => $meta) {
 			$container->getDefinition('eventManager')

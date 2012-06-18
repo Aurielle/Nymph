@@ -37,7 +37,7 @@ class IrcExtension extends CompilerExtension
 		'port' => 6667,
 		'nick' => 'NymphBot',
 		'password' => NULL,
-		'alternativeNicks' = array(),
+		'alternativeNicks' => array(),
 		'ident' => NULL,
 		'user' => NULL,
 		'channels' => array(),
@@ -57,7 +57,7 @@ class IrcExtension extends CompilerExtension
 		}
 
 		foreach ($config['networks'] as $name => $network) {
-			$options = self::getOptions($network, $this->networkDefaults);
+			$options = self::getOptions($network, $this->networkDefaults, TRUE);
 
 			if (empty($options['server'])) {
 				throw new Nette\InvalidStateException("Network '$name' has no server specified.");
