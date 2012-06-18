@@ -37,7 +37,7 @@ class Bot extends Nette\Object
 		$this->params = $params;
 		$this->socket = fsockopen($this->params['server'], $this->params['port']);
 		stream_set_blocking($this->socket, FALSE);
-		//$this->onConnect($this);
+		$this->eventManager->dispatchEvent(Events::connect, new Events\ConnectEventArgs($this));
 
 		// check for exist
 		$this->login($this->params['ident'], $this->params['user'], $this->params['nick'], $this->params['password']);
@@ -107,11 +107,14 @@ class Bot extends Nette\Object
 		foreach ($loop as $iteration) {
 			$data = fgets($this->socket, 512);
 			$ex = explode(' ', $data);
+
+			$this->eventManager->dispatchEvent(Events::commandReceived, new Events\CommandReceivedEventArgs($ex, $data, $this));
+
 			if ($data) echo "<-- $data\n";
 
-			if ($ex[0] == 'PING') {
+			/*if ($ex[0] == 'PING') {
 				$this->sendData("PONG $ex[1]");
-			}
+			}*/
 
 			if (strpos($data, "\x01VERSION") !== FALSE) {
 				$this->sendData("NOTICE " . preg_replace('#\:(.+)\!.+#', '$1', $ex[0]) . " :\x01VERSION Aurielle/Nymph v1.0-dev\x01");

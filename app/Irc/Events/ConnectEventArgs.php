@@ -9,25 +9,26 @@
  * the file license.md that was distributed with this source code.
  */
 
-namespace Nymph\Irc;
+namespace Nymph\Irc\Events;
 
 use Nymph, Nette;
 
 
 
-/**
- * Events
- */
-final class Events extends Nette\Object
+class ConnectEventArgs extends Nymph\Events\EventArgs
 {
-	public function __construct()
+	/** @var Nymph\Irc\Bot */
+	private $bot;
+
+
+	public function __construct(Nymph\Irc\Bot $bot)
 	{
-		throw new Nette\StaticClassException;
+		$this->bot = $bot;
 	}
 
 
-
-	const connect = 'connect';
-	const commandReceived = 'commandReceived';
-	const commandSent = 'commandSent';
+	public function getBot()
+	{
+		return $this->bot;
+	}
 }
