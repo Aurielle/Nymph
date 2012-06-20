@@ -23,8 +23,13 @@ class NymphExtension extends CompilerExtension
 	public function loadConfiguration()
 	{
 		$container = $this->getContainerBuilder();
-		$container->addDefinition('eventManager')
+		$evm = $container->addDefinition('eventManager')
 			->setClass('Nymph\Events\EventManager');
+
+		$container->addDefinition('consoleLogger')
+			->setClass('Nymph\Commands\ConsoleLogger');
+
+		$evm->addSetup('addEventSubscriber', array('@consoleLogger'));
 	}
 
 
