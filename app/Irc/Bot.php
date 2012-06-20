@@ -29,6 +29,12 @@ class Bot extends Nette\Object
 	/** @var resource */
 	protected $socket;
 
+	/** @var bool */
+	protected $stop = FALSE;
+
+	/** @var string */
+	protected $currentNick;
+
 
 
 	public function __construct(Nymph\Events\EventManager $evm, array $params)
@@ -53,9 +59,26 @@ class Bot extends Nette\Object
 
 	public function sendData($data)
 	{
+		// We can't send data if already disconnected
+		if (!(is_resource($this->socket) && get_resource_type($this->socket) === 'stream')) {
+			return;
+		}
+
+		$this->eventManager->dispatchEvent(Events::commandSent, new Events\CommandSentEventArgs($data, $this));
+
+		// QUIT detection
+		if (Nette\Utils\Strings::startsWith($data, 'QUIT')) {
+			$this->eventManager->dispatchEvent(Events::disconnect, new Events\DisconnectEventArgs($this));
+			$this->stop = TRUE;
+		}
+
+		// NICK detection
+		if (Nette\Utils\Strings::startsWith($data, 'NICK')) {
+			$tmp = explode(' ', $data);
+			$this->currentNick = $tmp[1];
+		}
+
 		fputs($this->socket, $data . "\r\n");
-		echo "--> $data\n"; // to do - log
-		// todo detekce QUIT
 	}
 
 
@@ -94,9 +117,13 @@ class Bot extends Nette\Object
 
 	public function quit($reason = 'Leaving')
 	{
-		//$this->onDisconnect($this, $reason);
-		$this->sendData("QUIT $reason");
-		exit;
+		$this->sendData("QUIT :$reason");
+	}
+
+
+	public function nick($nick)
+	{
+		$this->sendData("NICK $nick");
 	}
 
 
@@ -106,18 +133,12 @@ class Bot extends Nette\Object
 		$input = '';
 		foreach ($loop as $iteration) {
 			$data = fgets($this->socket, 512);
-			$ex = explode(' ', $data);
+			$this->eventManager->dispatchEvent(Events::commandReceived, new Events\CommandReceivedEventArgs($data, $this));
 
-			$this->eventManager->dispatchEvent(Events::commandReceived, new Events\CommandReceivedEventArgs($ex, $data, $this));
-
-			if ($data) echo "<-- $data\n";
-
-			/*if ($ex[0] == 'PING') {
-				$this->sendData("PONG $ex[1]");
-			}*/
-
-			if (strpos($data, "\x01VERSION") !== FALSE) {
-				$this->sendData("NOTICE " . preg_replace('#\:(.+)\!.+#', '$1', $ex[0]) . " :\x01VERSION Aurielle/Nymph v1.0-dev\x01");
+			if ($this->stop || ($data && Nette\Utils\Strings::startsWith($data, 'ERROR :Closing Link'))) {
+				fwrite(STDOUT, "[INFO] Nymph is shutting down.\n");
+				fclose($this->socket);
+				break;
 			}
 
 			if ($this->non_block_read(STDIN, $input)) {
@@ -127,5 +148,18 @@ class Bot extends Nette\Object
 			// reduce CPU usage, 2 iterations per second are more than enough
 			usleep(500);
 		}
+	}
+
+
+
+	public function getParams()
+	{
+		return $this->params;
+	}
+
+
+	public function getCurrentNick()
+	{
+		return $this->currentNick;
 	}
 }
