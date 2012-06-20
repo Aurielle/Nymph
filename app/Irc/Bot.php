@@ -117,7 +117,12 @@ class Bot extends Nette\Object
 
 	public function quit($reason = 'Leaving')
 	{
-		$this->sendData("QUIT :$reason");
+		if ($this->stop) {
+			return;
+		}
+		
+		$this->sendData("QUIT :$reason"); // this only sends the termination command, but we need the reply too
+		$this->run();
 	}
 
 
@@ -135,7 +140,7 @@ class Bot extends Nette\Object
 			$data = fgets($this->socket, 512);
 			$this->eventManager->dispatchEvent(Events::commandReceived, new Events\CommandReceivedEventArgs($data, $this));
 
-			if ($this->stop || ($data && Nette\Utils\Strings::startsWith($data, 'ERROR :Closing Link'))) {
+			if ($this->stop && ($data && Nette\Utils\Strings::startsWith($data, 'ERROR :Closing Link'))) {
 				fwrite(STDOUT, "[INFO] Nymph is shutting down.\n");
 				fclose($this->socket);
 				break;
