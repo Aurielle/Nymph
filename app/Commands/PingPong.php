@@ -15,6 +15,9 @@ use Nymph, Nette;
 
 
 
+/**
+ * Ping-Pong event
+ */
 class PingPong extends Nette\Object implements Nymph\Events\EventSubscriber
 {
 	public function getSubscribedEvents()
