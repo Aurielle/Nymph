@@ -15,7 +15,7 @@ use Nymph, Nette;
 
 
 
-class CommandReceivedEventArgs extends Nymph\Events\EventArgs
+class CommandSentEventArgs extends Nymph\Events\EventArgs
 {
 	/** @var array */
 	private $data = array();
