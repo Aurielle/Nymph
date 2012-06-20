@@ -28,6 +28,8 @@ final class Events extends Nette\Object
 
 
 	const connect = 'connect';
+	const disconnect = 'disconnect';
+
 	const commandReceived = 'commandReceived';
 	const commandSent = 'commandSent';
 }
