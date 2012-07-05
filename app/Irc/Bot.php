@@ -217,6 +217,16 @@ class Bot extends Nette\Object
 	{
 		return $this->params;
 	}
+	
+	
+	public function getAlternativeNicks()
+	{
+		$defaultNick = $this->params['nick'];
+		
+		return array_map(function($nick) use($defaultNick) {
+			return sprintf($nick, $defaultNick);
+		}, $this->params['alternativeNicks']);
+	}
 
 
 	public function getCurrentNick()
