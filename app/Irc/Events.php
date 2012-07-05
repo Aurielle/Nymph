@@ -32,4 +32,6 @@ final class Events extends Nette\Object
 
 	const commandReceived = 'commandReceived';
 	const commandSent = 'commandSent';
+
+	const nickChanged = 'nickChanged';
 }

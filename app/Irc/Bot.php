@@ -91,6 +91,8 @@ class Bot extends Nette\Object
 		// NICK detection
 		if (Nette\Utils\Strings::startsWith($data, 'NICK')) {
 			$tmp = explode(' ', $data);
+			$this->eventManager->dispatchEvent(Events::nickChanged, new Events\NickChangedEventArgs($tmp[1], $this->currentNick, $this));
+
 			$this->currentNick = $tmp[1];
 		}
 
